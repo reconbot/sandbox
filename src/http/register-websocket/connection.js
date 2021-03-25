@@ -10,6 +10,12 @@ module.exports = function connection (inventory, connectionId, ws) {
   pool.register(connectionId, ws)
   let update = updater('Sandbox')
 
+  const respondToError = (err, resp) => {
+    if (err || resp && resp.statusCode >= 400) {
+      ws.send(JSON.stringify({ 'message': 'Internal server error', connectionId, 'requestId': 'xxxxxx=' }), noop)
+    }
+  }
+
   ws.on('message', function message (msg) {
     let lambda
     try {
@@ -26,7 +32,7 @@ module.exports = function connection (inventory, connectionId, ws) {
         body: msg,
         connectionId,
         inventory,
-      }, noop)
+      }, respondToError)
     }
     else {
       let lambda = get.ws('default')
@@ -36,7 +42,7 @@ module.exports = function connection (inventory, connectionId, ws) {
         body: msg,
         connectionId,
         inventory,
-      }, noop)
+      }, respondToError)
     }
   })
 
